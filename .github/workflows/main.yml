@@ -10,7 +10,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        docker_image: [ubuntu:18.04, debian:9, centos:7, alpine:3.6]
+        docker_image: ["ubuntu:18.04", "debian:9", "centos:7", "alpine:3.6"]
     steps:
       - uses: actions/checkout@v1
         with:
