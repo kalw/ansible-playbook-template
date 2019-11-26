@@ -1,0 +1,55 @@
+# yamllint disable rule:line-length
+# yamllint disable rule:truthy
+---
+- hosts: "{{ target | default('all',true) }}"
+  gather_facts: true
+  vars:
+    - example_var: "foo"
+  tasks:
+    - name: Check if geerlingguy.java playbook is installed locally
+      command: ansible-galaxy list geerlingguy.java
+      delegate_to: localhost
+      register: local_docker_playbook
+      become: no
+      when:
+        - "'master' in group_names"
+      tags:
+        - install
+    - name: Install geerlingguy.java galaxy playbook
+      command: ansible-galaxy install geerlingguy.java
+      delegate_to: localhost
+      when:
+        - "'master' in group_names"
+        - "local_docker_playbook.stdout.find('was not found') != -1"
+      become: no
+      tags:
+        - install
+    - name: check java installed
+      command: "which java"
+      register: java_present
+      ignore_errors: yes
+      when:
+        - "'slave' in group_names"
+
+    - name: Include geerlingguy.java role
+      include_role:
+        name: geerlingguy.java
+      vars:
+        java_packages:
+          - openjdk-8-jdk
+      when:
+        - "'slave' in group_names"
+        - java_present.rc != 0
+
+    - name: install tools
+      package:
+        name: "{{ item }}"
+        state: present
+      become: true
+      with_items:
+        - "curl"
+        - "util-linux"
+        - "openssl"
+        - "unzip"
+      when:
+        - "'slave' in group_names"
